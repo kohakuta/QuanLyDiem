@@ -45,21 +45,25 @@ namespace QlyDiem
             string pass = txtpass.Text;
             if(user == "")
             {
-                MessageBox.Show("Không được để trống tài khoản!");
+                MessageBox.Show("Không được để trống tài khoản!", "Thông báo");  
                 txtuser.Focus();
                 return;
             }
+            
             if (pass == "")
             {
-                MessageBox.Show("Không được để trống mật khẩu!");
+                MessageBox.Show("Không được để trống mật khẩu!", "Thông báo");    
                 txtpass.Focus();
                 return;
             }
-            string sql = "select * from DangNhap where TenDangNhap = '" + user + "' and MatKhau = '" + pass + "' ";
+           
+            string sql = "select * from DangNhap where TenDangNhap = @TenDangNhap and MatKhau = @MatKhau;";
             try
             {
                 sqlConnection.Open();
                 SqlCommand cmd = new SqlCommand(sql, sqlConnection);
+                cmd.Parameters.AddWithValue("@TenDangNhap", user);
+                cmd.Parameters.AddWithValue("@MatKhau", pass);
                 SqlDataReader sqlDataReader = cmd.ExecuteReader();
                 if (sqlDataReader.Read())
                 {
@@ -69,13 +73,13 @@ namespace QlyDiem
                 }
                 else 
                 {
-                    MessageBox.Show("Tài khoản hoặc mật khẩu không chính xác!");
+                    MessageBox.Show("Tài khoản hoặc mật khẩu không chính xác!", "Thông báo");
                     return;
                 }
             }
             catch
             {
-                MessageBox.Show("Có lỗi sảy ra vui lòng kiểm tra lại!");
+                MessageBox.Show("Có lỗi xảy ra vui lòng kiểm tra lại!", "Thông báo");
             }
             finally
             {

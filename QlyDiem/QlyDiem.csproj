@@ -33,6 +33,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <HintPath>..\..\..\..\Downloads\Microsoft.Office.Interop.Excel_x86\Microsoft.Office.Interop.Excel.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -47,6 +52,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Connection.cs" />
+    <Compile Include="Diem.cs" />
+    <Compile Include="DiemModify.cs" />
     <Compile Include="fDiem.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -89,8 +96,16 @@
     <Compile Include="fSinhVien.Designer.cs">
       <DependentUpon>fSinhVien.cs</DependentUpon>
     </Compile>
+    <Compile Include="fThongKe.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="fThongKe.Designer.cs">
+      <DependentUpon>fThongKe.cs</DependentUpon>
+    </Compile>
     <Compile Include="GiangVien.cs" />
     <Compile Include="GVModify.cs" />
+    <Compile Include="Lop.cs" />
+    <Compile Include="LopModify.cs" />
     <Compile Include="MHModify.cs" />
     <Compile Include="MonHoc.cs" />
     <Compile Include="Program.cs" />
@@ -117,6 +132,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="fSinhVien.resx">
       <DependentUpon>fSinhVien.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="fThongKe.resx">
+      <DependentUpon>fThongKe.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -191,6 +209,21 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\pngtree-vector-lock-icon-png-image_1028350.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ms-excel-icon-2048x2026-nws24wyy.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\images_preview_rev_1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png-transparent-school-graduation-ceremony-computer-icons-higher-education-school-angle-logo-graduation-ceremony-thumbnail_preview_rev_1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png-transparent-school-graduation-ceremony-computer-icons-higher-education-school-angle-logo-graduation-ceremony-thumbnail.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\education-12.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

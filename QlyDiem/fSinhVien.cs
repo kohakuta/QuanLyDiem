@@ -21,8 +21,15 @@ namespace QlyDiem
         {
             InitializeComponent();
         }
-
-        private void fSinhVien_Load(object sender, EventArgs e)
+        public async Task LoadDataAsync()
+        {
+            await Task.Run(() =>
+            {
+                // Thực hiện các tác vụ tải dữ liệu nặng tại đây
+                System.Threading.Thread.Sleep(2000); // Giả lập tải dữ liệu
+            });
+        }
+        private void fSinhVien_Load(object sender, EventArgs e)                                    
         {
             dgvSV.ReadOnly = true;
             sVModify = new SVModify();
@@ -60,12 +67,24 @@ namespace QlyDiem
             }
             
         }
-
-        private void btnTimKiem_Click(object sender, EventArgs e)
+        
+        private void btnTimKiem_Click(object sender, EventArgs e)                              //Nút tìm kiếm
         {
             string maSV = tbTimKiemTheoMa.Text;
+            if (maSV == "Nhập mã sinh viên" || maSV == "")
+            {
+                MessageBox.Show("Vui lòng nhập mã sinh viên", "Thông báo");
+                return;
+            }
             try
             {
+                DataTable result = sVModify.search(maSV);
+
+                if (result.Rows.Count == 0)
+                {
+                    MessageBox.Show("Không tìm thấy dữ liệu", "Thông báo");
+                    return;
+                }
                 dgvSV.DataSource = sVModify.search(maSV);
                 dgvSV.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
                 dgvSV.Columns[0].HeaderText = "Mã Sinh Viên";
@@ -83,127 +102,177 @@ namespace QlyDiem
             }
         }
 
-        private void btnThem_Click(object sender, EventArgs e)
-        {
-            string maSV = tbMaSV.Text;
-            string tenSV = tbHoTen.Text;
-            string tenLop = cbbLop.Text; 
-            string queQuan = tbQueQuan.Text;
-            string sql = "select MaLop from Lop where TenLop = '" + tenLop + "'";
-            SqlConnection con = Connection.getSqlConnection();
-            con.Open();
-            SqlCommand cmd = new SqlCommand(sql, con);
-            object oj = cmd.ExecuteScalar();
-            con.Close();
-           
-            string maLop = oj.ToString();
-            string gioiTinh;
-            if (rdoNam.Checked)
-            {
-                gioiTinh = "Nam";
-            }
-            else
-            {
-                gioiTinh = "Nữ";
-            }
-            string ngaySinh = tbNgaysinh.Text;
-  
-            sinhVien = new SinhVien(maSV, tenSV, queQuan, tenLop, maLop ,ngaySinh, gioiTinh);
-            if (sVModify.insertSV(sinhVien))
-            {
-                // Thêm thành công, cập nhật DataGridView
-                dgvSV.DataSource = sVModify.getAllSinhvien();
-            }
-            else
-            {
-                MessageBox.Show("Lỗi Không thêm được ", "Lỗi");
-            }
-
-
-        }
-
-        private void cbbLop_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void btnRefresh_Click(object sender, EventArgs e)
-        {
-            tbMaSV.Clear();
-            tbHoTen.Clear();
-            tbQueQuan.Clear();
-        }
-
-        private void btnTatCa_Click(object sender, EventArgs e)
-        {
-            dgvSV.ReadOnly = true;
-            sVModify = new SVModify();
-            try
-            {
-                dgvSV.DataSource = sVModify.getAllSinhvien();
-                dgvSV.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-                dgvSV.Columns[0].HeaderText = "Mã Sinh Viên";
-                dgvSV.Columns[1].HeaderText = "Tên Sinh Viên";
-                dgvSV.Columns[2].HeaderText = "Mã Lóp";
-                dgvSV.Columns[3].HeaderText = "Tên Lóp";
-                dgvSV.Columns[3].HeaderText = "Ngày Sinh";
-                dgvSV.Columns[4].HeaderText = "Quê Quán";
-                dgvSV.Columns[5].HeaderText = "Giới Tính";
-                dgvSV.ReadOnly = true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi " + ex.Message, "Lỗi");
-            }
-        }
-
-        private void btnSua_Click(object sender, EventArgs e)
+        private void btnThem_Click(object sender, EventArgs e)                                  //Nút thêm
         {
             string maSV = tbMaSV.Text;
             string tenSV = tbHoTen.Text;
             string tenLop = cbbLop.Text;
             string queQuan = tbQueQuan.Text;
-            string sql = "select MaLop from Lop where TenLop = '" + tenLop + "'";
+            string ngaySinh = tbNgaysinh.Text;
+            string gioiTinh = rdoNam.Checked ? "Nam" : rdoNu.Checked ? "Nữ" : null;
+
+            // check nhập liệu
+            if (string.IsNullOrWhiteSpace(maSV) || string.IsNullOrWhiteSpace(tenSV) ||
+                string.IsNullOrWhiteSpace(tenLop) || string.IsNullOrWhiteSpace(queQuan) ||
+                string.IsNullOrWhiteSpace(ngaySinh) || gioiTinh == null)
+            {
+                MessageBox.Show("Vui lòng điền đầy đủ thông tin", "Thông báo");
+                return;
+            }
+
+            string sql = "select MaLop from Lop where TenLop = @tenLop";
+            SqlConnection con = null;
+            SqlCommand cmd = null;
+
+            try
+            {
+                con = Connection.getSqlConnection();
+                con.Open();
+                cmd = new SqlCommand(sql, con);
+                cmd.Parameters.AddWithValue("@tenLop", tenLop);
+                object oj = cmd.ExecuteScalar();
+                string maLop = oj?.ToString(); // Sử dụng toán tử null-conditional để tránh lỗi NullReferenceException
+
+                SinhVien sinhVien = new SinhVien(maSV, tenSV, queQuan, tenLop, maLop, ngaySinh, gioiTinh);
+                if (sVModify.insertSV(sinhVien))
+                {
+                    // Thêm thành công, cập nhật DataGridView
+                    dgvSV.DataSource = sVModify.getAllSinhvien();
+                    MessageBox.Show("Thêm thành công", "Thông báo");
+                }
+                else
+                {
+                    MessageBox.Show("Lỗi không thêm được", "Lỗi");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi");
+            }
+            finally
+            {
+                con?.Close();
+                cmd?.Dispose();
+            }     
+        }
+
+
+
+        private void btnSua_Click(object sender, EventArgs e)                                   //Nút sửa
+        {
+            string maSV = tbMaSV.Text;
+            string tenSV = tbHoTen.Text;
+            string tenLop = cbbLop.Text;
+            string queQuan = tbQueQuan.Text;
+            string ngaySinh = tbNgaysinh.Text;
+            string gioiTinh = rdoNam.Checked ? "Nam" : rdoNu.Checked ? "Nữ" : null;
+
+            // check nhập liệu
+            if (string.IsNullOrWhiteSpace(maSV) || string.IsNullOrWhiteSpace(tenSV) ||
+                string.IsNullOrWhiteSpace(tenLop) || string.IsNullOrWhiteSpace(queQuan) ||
+                string.IsNullOrWhiteSpace(ngaySinh) || gioiTinh == null)
+            {
+                MessageBox.Show("Vui lòng điền đầy đủ thông tin", "Thông báo");
+                return;
+            }
+
+            string sql = "select MaLop from Lop where TenLop = @tenLop";
             SqlConnection con = Connection.getSqlConnection();
             con.Open();
             SqlCommand cmd = new SqlCommand(sql, con);
+            cmd.Parameters.AddWithValue("@tenLop", tenLop);
             object oj = cmd.ExecuteScalar();
-            con.Close();
+            string maLop = oj?.ToString(); // Sử dụng toán tử null-conditional để tránh lỗi NullReferenceException
 
-            string maLop = oj.ToString();
-            string gioiTinh;
-            if (rdoNam.Checked)
-            {
-                gioiTinh = "Nam";
-            }
-            else
-            {
-                gioiTinh = "Nữ";
-            }
-            string ngaySinh = tbNgaysinh.Text;
             sinhVien = new SinhVien(maSV, tenSV, queQuan, tenLop, maLop, ngaySinh, gioiTinh);
-            if (sVModify.update(sinhVien))
+
+            if (string.IsNullOrWhiteSpace(maSV))
             {
-                // sửa thành công, cập nhật DataGridView
-                dgvSV.DataSource = sVModify.getAllSinhvien();
+                MessageBox.Show("Vui lòng nhập Mã Sinh Viên để sửa ", "Thông báo");
+                return;
             }
-            else
+
+            try
             {
-                MessageBox.Show("Lỗi Không sửa được ", "Lỗi");
+                DataTable result = sVModify.search(maSV);
+
+                if (result.Rows.Count == 0)
+                {
+                    MessageBox.Show("Không tìm thấy dữ liệu để sửa ", "Thông báo");
+                    return;
+                }
+                else if (sVModify.update(sinhVien))
+                {
+                    MessageBox.Show("Sửa thành công.", "Thông báo");
+                    // sửa thành công, cập nhật DataGridView
+                    dgvSV.DataSource = sVModify.getAllSinhvien();
+                }
+                else
+                {
+                    MessageBox.Show("Lỗi Không sửa được ", "Lỗi");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi");
             }
         }
 
-        private void btnXoa_Click(object sender, EventArgs e)
+
+        private void btnXoa_Click(object sender, EventArgs e)                                   //Nút xóa
         {
-            string sv = tbMaSV.Text;
-            if (sVModify.delete(sv))
+            string maSV = tbMaSV.Text;
+            if (string.IsNullOrWhiteSpace(maSV))
             {
-                dgvSV.DataSource = sVModify.getAllSinhvien();
+                MessageBox.Show("Vui lòng nhập Mã Sinh Viên để xóa ", "Thông báo");
+                return;
             }
-            else
+            DialogResult tl = MessageBox.Show("Bạn có muốn xóa dữ liệu không?", "Xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (tl == DialogResult.Cancel || tl == DialogResult.No)
             {
-                MessageBox.Show("Lỗi Không xóa được ", "Lỗi");
+                return;
             }
+            try
+            {
+                DataTable result = sVModify.search(maSV);
+
+                if (result.Rows.Count == 0)
+                {
+                    MessageBox.Show("Không tìm thấy dữ liệu để xóa", "Thông báo");
+                    return;
+                }else if (sVModify.delete(maSV))
+                {
+                    dgvSV.DataSource = sVModify.getAllSinhvien();
+                    MessageBox.Show("Xóa thành công", "Thông báo");
+                }
+                else
+                {
+                    MessageBox.Show("Lỗi Không xóa được ", "Lỗi");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi");
+            }
+            
+        }
+        private void btnRefresh_Click(object sender, EventArgs e)                               //Nút làm mới
+        {
+            tbTimKiemTheoMa.Text = "Nhập mã sinh viên";
+            tbMaSV.Clear();
+            tbHoTen.Clear();
+            tbQueQuan.Clear();
+            tbMaSV.Focus();
+        }
+
+        private void btnTatCa_Click(object sender, EventArgs e)                                 //Nút tất cả
+        {
+            tbTimKiemTheoMa.Text = "Nhập mã sinh viên";
+            tbMaSV.Clear();
+            tbHoTen.Clear();
+            tbQueQuan.Clear();
+            fSinhVien_Load(sender, e);
+            
         }
 
         private void label20_Click(object sender, EventArgs e)
@@ -239,6 +308,36 @@ namespace QlyDiem
         private void label19_Click(object sender, EventArgs e)
         {
             btnXoa_Click(sender, e);
+        }
+
+        private void tbTimKiemTheoMa_Click_1(object sender, EventArgs e)
+        {
+            tbTimKiemTheoMa.Clear();
+        }
+
+        private void dgvSV_CellContentClick(object sender, DataGridViewCellEventArgs e)                 //cell click
+        {
+            DataGridViewRow row = new DataGridViewRow();
+            row = dgvSV.Rows[e.RowIndex];
+            tbMaSV.Text = Convert.ToString(row.Cells["MaSV"].Value);
+            tbHoTen.Text = Convert.ToString(row.Cells["TenSV"].Value);
+            cbbLop.Text = Convert.ToString(row.Cells["TenLop"].Value);
+            tbNgaysinh.Text = Convert.ToString(row.Cells["NgaySinh"].Value);
+            tbQueQuan.Text = Convert.ToString(row.Cells["QueQuan"].Value);
+            string gt;
+            gt = dgvSV.CurrentRow.Cells["GioiTinh"].Value.ToString();
+            if (gt == "Nam")
+            {
+                rdoNam.Checked = true;
+            }
+            if (gt == "Nữ")
+            {
+                rdoNu.Checked = true;
+            }
+        }
+        private void fSinhVien_Activated_1(object sender, EventArgs e)
+        {
+            fSinhVien_Load(sender, e);
         }
     }
 }
